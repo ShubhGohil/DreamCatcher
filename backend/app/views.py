@@ -6,7 +6,7 @@
 # from django.views.decorators.csrf import csrf_exempt
 # from datetime import timedelta
 
-from .models import Profile
+from .models import Profile, Dream
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,7 +14,8 @@ from rest_framework import status, permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer, MeSerializer
+from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer, MeSerializer, DreamSerializer
+
 
 class RegisterView(APIView):
     def post(self, request):
@@ -82,9 +83,56 @@ class MeView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     
+class DreamListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
 
+    def get(self, request):
+        dreams = Dream.objects.filter(user=request.user)
+        serializer = DreamSerializer(dreams, many=True)
+        return Response(serializer.data)
 
-    
+    def post(self, request):
+        serializer = DreamSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DreamDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    # Helper method
+    def get_object(self, pk, user):
+        try:
+            a = Dream.objects.get(id=pk, user=user)
+            print(a)
+            return Dream.objects.get(id=pk, user=user)
+        except Dream.DoesNotExist:
+            return None
+
+    # PUT /dreams/<id>/
+    def put(self, request, pk):
+        dream = self.get_object(pk, request.user)
+        if not dream:
+            return Response({"error": "Dream not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DreamSerializer(dream, data=request.data, partial=True)
+        print(serializer)
+        if serializer.is_valid():
+            serializer.save()    # user remains same
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # DELETE /dreams/<id>/
+    def delete(self, request, pk):
+        dream = self.get_object(pk, request.user)
+        if not dream:
+            return Response({"error": "Dream not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        dream.delete()
+        return Response({"message": "Dream deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 
 # def analytics(req):

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
-from .models import Profile
+from .models import Profile, Dream
 
 User = get_user_model()
 
@@ -71,3 +71,9 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['id', 'full_name', 'bio', 'username', 'email', 'created_at']
+
+
+class DreamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Dream
+        fields = ['id', 'title', 'content','mood','tags','is_public','created_at']
