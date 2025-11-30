@@ -1,6 +1,4 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-// import { User, Session } from '@supabase/supabase-js';
-// import { supabase } from '../lib/supabase';
 import { api } from '../lib/api'
 
 interface User {
@@ -27,16 +25,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
 
-    const mockUser = {
-      id: 'mock-user-1',
-      username: 'DreamExplorer',
-      email: 'test@example.com'
-    };
+    // const mockUser = {
+    //   id: 'mock-user-1',
+    //   username: 'DreamExplorer',
+    //   email: 'test@example.com'
+    // };
 
     console.log("AuthContext: Setting mock user...");
-    setUser(mockUser);
+    // setUser(mockUser);
+    setUser(user)
     setLoading(false);
-        // checkAuth();
+        checkAuth();
     }, []);
 
     const checkAuth = async () => {
@@ -59,49 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-  // useEffect(() => {
-  //   supabase.auth.getSession().then(({ data: { session } }) => {
-  //     setSession(session);
-  //     setUser(session?.user ?? null);
-  //     setLoading(false);
-  //   });
-  //
-  //   const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-  //     (async () => {
-  //       setSession(session);
-  //       setUser(session?.user ?? null);
-  //       setLoading(false);
-  //     })();
-  //   });
-  //
-  //   return () => subscription.unsubscribe();
-  // }, []);
-
-  // const signUp = async (email: string, password: string, username: string) => {
-  //   try {
-  //     const { data: authData, error: authError } = await supabase.auth.signUp({
-  //       email,
-  //       password,
-  //     });
-  //
-  //     if (authError) throw authError;
-  //     if (!authData.user) throw new Error('No user returned');
-  //
-  //     const { error: profileError } = await supabase
-  //       .from('profiles')
-  //       .insert({
-  //         id: authData.user.id,
-  //         username,
-  //       });
-  //
-  //     if (profileError) throw profileError;
-  //
-  //     return { error: null };
-  //   } catch (error) {
-  //     return { error: error as Error };
-  //   }
-  // };
-
 
     const signUp = async (email: string, password: string, username: string) => {
         try {
@@ -118,19 +74,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
 
-  // const signIn = async (email: string, password: string) => {
-  //   try {
-  //     const { error } = await supabase.auth.signInWithPassword({
-  //       email,
-  //       password,
-  //     });
-  //
-  //     if (error) throw error;
-  //     return { error: null };
-  //   } catch (error) {
-  //     return { error: error as Error };
-  //   }
-  // };
 
     const signIn = async (email: string, password: string) => {
         try {
@@ -149,10 +92,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-
-  // const signOut = async () => {
-  //   await supabase.auth.signOut();
-  // };
 
     const signOut = async () => {
         try {

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Heart, MessageCircle, Moon, Tag } from 'lucide-react';
-// import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 
@@ -23,61 +22,9 @@ export default function DreamFeed() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  console.log(user)
-
-  // useEffect(() => {
-  //   loadDreams();
-  //
-  //   const channel = supabase
-  //     .channel('dreams-feed')
-  //     .on(
-  //       'postgres_changes',
-  //       { event: '*', schema: 'public', table: 'dreams' },
-  //       () => {
-  //         loadDreams();
-  //       }
-  //     )
-  //     .subscribe();
-  //
-  //   return () => {
-  //     supabase.removeChannel(channel);
-  //   };
-  // }, []);
-
     useEffect(() => {
         loadDreams();
     }, []);
-
-  // const loadDreams = async () => {
-  //   try {
-  //     const { data, error } = await supabase
-  //       .from('dreams')
-  //       .select(`
-  //         id,
-  //         title,
-  //         content,
-  //         mood,
-  //         tags,
-  //         created_at,
-  //         profiles (
-  //           username,
-  //           avatar_url
-  //         ),
-  //         dream_reactions (count)
-  //       `)
-  //       .eq('is_public', true)
-  //       .order('created_at', { ascending: false })
-  //       .limit(50);
-  //
-  //     if (error) throw error;
-  //     setDreams(data || []);
-  //   } catch (error) {
-  //     console.error('Error loading dreams:', error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
 
     const loadDreams = async () => {
         try {
@@ -90,39 +37,6 @@ export default function DreamFeed() {
           setLoading(false);
         }
     };
-
-  // const handleReaction = async (dreamId: string) => {
-  //   if (!user) return;
-  //
-  //   try {
-  //     const { data: existing } = await supabase
-  //       .from('dream_reactions')
-  //       .select('id')
-  //       .eq('dream_id', dreamId)
-  //       .eq('user_id', user.id)
-  //       .eq('reaction_type', 'heart')
-  //       .maybeSingle();
-  //
-  //     if (existing) {
-  //       await supabase
-  //         .from('dream_reactions')
-  //         .delete()
-  //         .eq('id', existing.id);
-  //     } else {
-  //       await supabase
-  //         .from('dream_reactions')
-  //         .insert({
-  //           dream_id: dreamId,
-  //           user_id: user.id,
-  //           reaction_type: 'heart',
-  //         });
-  //     }
-  //
-  //     loadDreams();
-  //   } catch (error) {
-  //     console.error('Error handling reaction:', error);
-  //   }
-  // };
 
 
     const handleReaction = async (dreamId: string) => {

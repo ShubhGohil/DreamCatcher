@@ -13,8 +13,8 @@ function AppContent() {
     );
   }
 
-  // return user ? <Dashboard /> : <LandingPage />;
-  return <Dashboard />;
+  return user ? <Dashboard /> : <LandingPage />;
+  // return <Dashboard />;
 }
 
 function App() {

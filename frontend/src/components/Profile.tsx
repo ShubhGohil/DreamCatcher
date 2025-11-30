@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { User, Edit2, Save, X } from 'lucide-react';
-// import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 
@@ -8,7 +7,7 @@ interface ProfileData {
   username: string;
   full_name: string | null;
   bio: string | null;
-  avatar_url: string | null;
+  created_at: Date | null;
 }
 
 export default function Profile() {
@@ -22,7 +21,7 @@ export default function Profile() {
     username: '',
     full_name: '',
     bio: '',
-    avatar_url: null,
+    created_at: null,
   });
 
   useEffect(() => {
@@ -31,28 +30,6 @@ export default function Profile() {
     }
   }, [user]);
 
-  // const loadProfile = async () => {
-  //   if (!user) return;
-  //
-  //   try {
-  //     const { data, error } = await supabase
-  //       .from('profiles')
-  //       .select('*')
-  //       .eq('id', user.id)
-  //       .maybeSingle();
-  //
-  //     if (error) throw error;
-  //     if (data) {
-  //       setProfile(data);
-  //       setEditedProfile(data);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error loading profile:', error);
-  //     setError('Failed to load profile');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
     const loadProfile = async () => {
         if (!user) return;
@@ -67,33 +44,6 @@ export default function Profile() {
           setLoading(false);
         }
     };
-
-  // const handleSave = async () => {
-  //   if (!user) return;
-  //
-  //   setSaving(true);
-  //   setError('');
-  //
-  //   try {
-  //     const { error } = await supabase
-  //       .from('profiles')
-  //       .update({
-  //         full_name: editedProfile.full_name,
-  //         bio: editedProfile.bio,
-  //       })
-  //       .eq('id', user.id);
-  //
-  //     if (error) throw error;
-  //
-  //     setProfile(editedProfile);
-  //     setIsEditing(false);
-  //   } catch (error) {
-  //     console.error('Error updating profile:', error);
-  //     setError('Failed to update profile');
-  //   } finally {
-  //     setSaving(false);
-  //   }
-  // };
 
 
     const handleSave = async () => {
@@ -124,7 +74,7 @@ export default function Profile() {
       username: '',
       full_name: '',
       bio: '',
-      avatar_url: null,
+      created_at: null,
     });
     setIsEditing(false);
     setError('');
@@ -266,7 +216,7 @@ export default function Profile() {
                 <div>
                   <p className="text-sm text-purple-600 mb-1">Member Since</p>
                   <p className="text-purple-900 font-medium">
-                    {new Date(user?.created_at || '').toLocaleDateString()}
+                    {new Date(profile.created_at || '').toLocaleDateString()}
                   </p>
                 </div>
               </div>

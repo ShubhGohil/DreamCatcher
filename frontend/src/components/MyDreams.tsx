@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Plus, Tag, Trash2, Edit2, Eye, EyeOff, Moon } from 'lucide-react';
-// import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 
@@ -35,25 +34,6 @@ export default function MyDreams() {
     }
   }, [user]);
 
-  // const loadDreams = async () => {
-  //   if (!user) return;
-  //
-  //   try {
-  //     const { data, error } = await supabase
-  //       .from('dreams')
-  //       .select('*')
-  //       .eq('user_id', user.id)
-  //       .order('created_at', { ascending: false });
-  //
-  //     if (error) throw error;
-  //     setDreams(data || []);
-  //   } catch (error) {
-  //     console.error('Error loading dreams:', error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
     const loadDreams = async () => {
         if (!user) return;
         try {
@@ -85,32 +65,6 @@ export default function MyDreams() {
         is_public: formData.is_public,
       };
 
-      // if (editingDream) {
-      //   const { error } = await supabase
-      //     .from('dreams')
-      //     .update({
-      //       title: formData.title,
-      //       content: formData.content,
-      //       mood: formData.mood || null,
-      //       tags,
-      //       is_public: formData.is_public,
-      //       updated_at: new Date().toISOString(),
-      //     })
-      //     .eq('id', editingDream.id);
-      //
-      //   if (error) throw error;
-      // } else {
-      //   const { error } = await supabase.from('dreams').insert({
-      //     user_id: user.id,
-      //     title: formData.title,
-      //     content: formData.content,
-      //     mood: formData.mood || null,
-      //     tags,
-      //     is_public: formData.is_public,
-      //   });
-      //
-      //   if (error) throw error;
-      // }
 
         if (editingDream) {
             await api.put(`/dreams/${editingDream.id}/`, payload);
