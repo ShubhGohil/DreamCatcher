@@ -1,12 +1,4 @@
-# from django.shortcuts import render
-# from django.utils.timezone import now
-# from django.db.models import Count
-# from django.db.models.functions import TruncDate
-# from django.http import JsonResponse
-# from django.views.decorators.csrf import csrf_exempt
-# from datetime import timedelta
-
-from .models import Profile, Dream
+from .models import Profile, Dream, DreamReaction
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,8 +6,9 @@ from rest_framework import status, permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer, MeSerializer, DreamSerializer
+from .serializers import RegisterSerializer, LoginSerializer, MeSerializer, DreamSerializer, PublicDreamSerializer
 
+from django.shortcuts import get_object_or_404
 
 class RegisterView(APIView):
     def post(self, request):
@@ -99,6 +92,17 @@ class DreamListCreateAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class PublicDreamsView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        dreams = Dream.objects.filter(is_public=True).order_by("-created_at")
+        serializer = PublicDreamSerializer(dreams, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class DreamDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
@@ -133,6 +137,56 @@ class DreamDetailAPIView(APIView):
 
         dream.delete()
         return Response({"message": "Dream deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class ToggleReactionView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, id):
+
+        dream = Dream.objects.filter(pk=id).first()
+        if not dream:
+            return Response(
+                {"error": "Dream not found or exist."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Prevent reacting to private dreams
+        if not dream.is_public:
+            return Response(
+                {"error": "You are not allowed to react to this dream."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Check if reaction already exists
+        existing = DreamReaction.objects.filter(
+            dream=dream,
+            user=request.user,
+            reaction_type="heart"
+        ).first()
+
+        if existing:
+            # Remove reaction
+            existing.delete()
+            action = "unhearted"
+        else:
+            # Add new reaction
+            DreamReaction.objects.create(
+                dream=dream,
+                user=request.user,
+                reaction_type="heart"
+            )
+            action = "hearted"
+
+        # Updated count
+        heart_count = dream.reactions.filter(reaction_type="heart").count()
+
+        return Response({
+            "message": f"Dream {action} successfully",
+            "heart_count": heart_count
+        }, status=status.HTTP_200_OK)
+
 
 
 # def analytics(req):

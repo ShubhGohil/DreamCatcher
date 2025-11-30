@@ -63,10 +63,9 @@ class MeSerializer(serializers.Serializer):
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.CharField(source='user.email', read_only=True)
 
-# profile serializer
-class ProfileSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
-    email = serializers.CharField(source='user.email', read_only=True)
+# Dream profile serializer
+class DreamProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
 
     class Meta:
         model = Profile
@@ -77,3 +76,27 @@ class DreamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dream
         fields = ['id', 'title', 'content','mood','tags','is_public','created_at']
+        fields = ["username"]
+
+class DreamReactionSerializer(serializers.Serializer):
+    count = serializers.IntegerField()
+
+class PublicDreamSerializer(serializers.ModelSerializer):
+    profiles = DreamProfileSerializer(source="user.profile")  
+    reactions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Dream
+        fields = [
+            "id",
+            "title",
+            "content",
+            "mood",
+            "tags",
+            "created_at",
+            "profiles",
+            "reactions",
+        ]
+
+    def get_reactions(self, obj):
+        return [{"count": obj.reactions.filter(reaction_type="heart").count()}]
