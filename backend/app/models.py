@@ -1,18 +1,9 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import User
 from django.db import models
 
-# Create your models here.
-class CustomUser(AbstractUser):
-    """
-    Custom User model.
-    Extending AbstractUser gives us all the fields of a normal User
-    (username, password, email, first_name, last_name) plus
-    any custom fields we want to add later.
-    """
-
-    # You can add custom fields here if needed, e.g.:
-    # bio = models.TextField(blank=True)
-    # dark_mode = models.BooleanField(default=False) # For "save preferences"
-
-    def __str__(self):
-        return self.username
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    full_name = models.CharField(max_length=255, null=True, blank=True)
+    bio = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

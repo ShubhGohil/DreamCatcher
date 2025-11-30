@@ -4,6 +4,7 @@ frontend/dist
 frontend/node_modules
 
 backend/.venv
+backend/venv
 backend/db.sqlite3
 
 frontend/.vscode/*

@@ -1,64 +1,195 @@
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import AuthenticationForm
-from django.shortcuts import render, redirect
-from django.contrib import messages
+# from django.shortcuts import render
+# from django.utils.timezone import now
+# from django.db.models import Count
+# from django.db.models.functions import TruncDate
+# from django.http import JsonResponse
+# from django.views.decorators.csrf import csrf_exempt
+# from datetime import timedelta
 
-# Create your views here.
-def login_view(request):
-    """
-    Handles user login.
-    If method is POST: Validates credentials and logs the user in.
-    If method is GET: Renders the login form.
-    """
-    # If user is already logged in, don't show them the login page again
-    if request.user.is_authenticated:
-        return redirect('home')
+from .models import Profile
 
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
+from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer, MeSerializer
 
-            # Authenticate validates the credentials against the database
-            user = authenticate(username=username, password=password)
+class RegisterView(APIView):
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
 
-            if user is not None:
-                login(request, user)
-                messages.success(request, f"Welcome back to the DreamCatcher, {username}.")
-                return redirect('home')
-            else:
-                messages.error(request, "Invalid username or password.")
-        else:
-            messages.error(request, "Invalid username or password.")
-    else:
-        form = AuthenticationForm()
+        if serializer.is_valid():
+            user = serializer.save()
+            token = Token.objects.create(user=user)
 
-    return render(request, 'login.html', {'form': form})
+            # profile, created = Profile.objects.create(user=user)
+
+            return Response(
+                {
+                    "token": token.key,
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                    },
+                },
+                status = status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class LoginView(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data, context={'request': request})
+        # print("Serializer: ", serializer)
+
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+
+            token, created = Token.objects.get_or_create(user=user)
+            return Response(
+                {
+                    "token": token.key, # change this to auth_token.key
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                    },
+                },
+                status = status.HTTP_200_OK,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LogOutView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            request.auth.delete()
+            return Response(status=status.HTTP_200_OK)
+        except (AttributeError, Exception):
+            return Response(status=status.HTTP_200_OK)
+        
+class MeView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        serializer = MeSerializer(request.user.profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    
 
 
-def logout_view(request):
-    """
-    Logs the user out and redirects to login.
-    """
-    logout(request)
-    messages.info(request, "You have woken up. (Logged out successfully)")
-    return redirect('login')
+    
 
 
-def home_view(request):
-    """
-    The Dashboard.
-    Strict Logic: If logged in -> Render Home. Else -> Kick to Login with message.
-    """
-    if request.user.is_authenticated:
-        # User is allowed in. Render the dashboard.
-        context = {
-            'user': request.user,
-            'dreams': [] # We will populate this from the database later
-        }
-        return render(request, 'home.html', context)
-    else:
-        # Security Guard: You are not on the list.
-        messages.warning(request, "You must be authenticated to access DreamCatcher.")
-        return redirect('login')
+# def analytics(req):
+
+#     # Authenticate user using the auth table
+#     token = req.headers.get("Authorization") 
+
+#     # If no token provided user is not authenticated and status code 401
+#     if not token:
+#         return JsonResponse({"error": "Missing Authorization token"}, status=401)
+    
+#     try:
+#         auth = AuthTable.objects.get(key=token) # this AuthTable links the token to Django user, if invalid -> 401
+#         user = auth.user
+#     except AuthTable.DoesNotExist:
+#         return JsonResponse({"error": "Invalid token"}, status = 401)
+    
+#     # All dreams by this particular user
+
+#     dreams = Dream.objects.filter(user=user)
+
+#     # counting total number of dreams 
+
+#     total_dreams = dreams.count()
+
+#     # the dreams that were created and iput by the user this month
+
+#     now_dt = now()
+#     this_month_count = dreams.filter(
+#         created_at__year = now_dt.year,
+#         created_at__month = now_dt.month
+#     ).count()
+
+#     # most Common mood by the user after watching the dream
+#     # Groups all dreams by mood and counts dreams per mood
+#     mood_counts = dreams.values("mood").annotate(count=Count("mood")).order_by("-count")
+#     most_common_mood = mood_counts[0]["mood"] if mood_counts else None
+
+#     # Tags - Tags is a JSON list -> so flatten it manually
+
+#     from collections import Counter
+
+#     all_tags = [] # create an empty list to store the tags
+
+#     for d in dreams:
+#         if isinstance(d.tags, list):
+#             all_tags.extend(d.tags)
+
+#     # count the frequency of each tag 
+
+#     tag_counter = Counter(all_tags) # freq of the tags
+#     top_tags = [{
+#         "tag": tag, 
+#         "count": count
+#         } for tag, count in tag_counter.most_common()]
+    
+#     # Mood distribution of user as per the mood counts earlier
+
+#     mood_dist = [
+#         {"mood": m["mood"],
+#          "count": m["count"]
+#         } for m in mood_counts
+#     ]
+
+
+#     # Recent Activity of the user (Last 14 days)
+
+#     # computer the start date
+
+#     start_date = now_dt - timedelta(days=13)
+
+#     # Querying dreams group by day
+
+#     date_counts = (
+#         dreams.filter(created_at__date__gte=start_date.date())
+#         .annotate(day=TruncDate("created_at"))
+#         .values("day")
+#         .annotate(count=Count("id"))
+#         .order_by("day")
+#     )
+
+#     # Convert to list of date + count for each day in last 14 days
+#     daily_map = {entry["day"]: entry["count"] for entry in date_counts} 
+
+#     # Build a 14 days list, include the empty days
+#     recent_activity = []
+#     for i in range(14):
+#         day = (start_date + timedelta(days=i)).date()
+#         recent_activity.append({
+#             "date": str(day),
+#             "count": daily_map.get(day, 0)
+#         })
+
+#     # now return the JSON response
+
+#     return JsonResponse({
+#         "totalDreams": total_dreams,
+#         "thisMonth": this_month_count,
+#         "mostCommonMood": most_common_mood,
+#         "topTags": top_tags,
+#         "moodDistribution": mood_dist,
+#         "recentActivity": recent_activity
+#     }, status=200)
+
+
+    
+
+# c5583923c9447f3a912045569ac686ab7db1572f
