@@ -66,7 +66,8 @@ class MeSerializer(serializers.Serializer):
 # Dream profile serializer
 class DreamProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
-
+    email = serializers.EmailField(source="user.email", read_only=True)
+    
     class Meta:
         model = Profile
         fields = ['id', 'full_name', 'bio', 'username', 'email', 'created_at']
@@ -76,7 +77,6 @@ class DreamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dream
         fields = ['id', 'title', 'content','mood','tags','is_public','created_at']
-        fields = ["username"]
 
 class DreamReactionSerializer(serializers.Serializer):
     count = serializers.IntegerField()

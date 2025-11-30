@@ -7,8 +7,8 @@ urlpatterns = [
     path("auth/register/", RegisterView.as_view(), name="register"),
     path("auth/me/", MeView.as_view(), name="me"),
     path("auth/logout/", LogOutView.as_view(), name="logout"),
+    path("dreams/public/", PublicDreamsView.as_view()),
     path("dreams/", DreamListCreateAPIView.as_view()),
     path("dreams/<str:pk>/", DreamDetailAPIView.as_view(), name="dream-detail"),
-    path("dreams/public/", PublicDreamsView.as_view()),
     path("dreams/<uuid:id>/react/", ToggleReactionView.as_view()),
 ]
