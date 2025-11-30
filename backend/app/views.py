@@ -6,7 +6,7 @@ from rest_framework import status, permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from .serializers import RegisterSerializer, LoginSerializer, MeSerializer, DreamSerializer, PublicDreamSerializer
+from .serializers import RegisterSerializer, LoginSerializer, MeSerializer, DreamSerializer, PublicDreamSerializer, ProfileSerializer
 
 from django.shortcuts import get_object_or_404
 
@@ -188,6 +188,43 @@ class ToggleReactionView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class ProfileView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            profile = Profile.objects.get(user=request.user)
+        except Profile.DoesNotExist:
+            return Response(
+                {'error': 'Profile not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception:
+            return Response(
+                {'error': 'Failed to retrieve profile'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        try:
+            profile, _ = Profile.objects.get_or_create(user=request.user)
+        except Exception:
+            return Response(
+                {'error': 'Failed to retrieve profile'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # def analytics(req):
 

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LoginView, RegisterView, LogOutView, MeView, DreamListCreateAPIView, DreamDetailAPIView, PublicDreamsView, ToggleReactionView
+from .views import LoginView, RegisterView, LogOutView, MeView, DreamListCreateAPIView, DreamDetailAPIView, PublicDreamsView, ToggleReactionView, ProfileView
 
 urlpatterns = [
     # path("analytics/", analytics, name="analytics")
@@ -11,4 +11,5 @@ urlpatterns = [
     path("dreams/", DreamListCreateAPIView.as_view()),
     path("dreams/<str:pk>/", DreamDetailAPIView.as_view(), name="dream-detail"),
     path("dreams/<uuid:id>/react/", ToggleReactionView.as_view()),
+    path("auth/profile/", ProfileView.as_view())
 ]
