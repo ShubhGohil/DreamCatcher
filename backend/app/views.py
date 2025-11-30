@@ -6,7 +6,13 @@ from rest_framework import status, permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from .serializers import RegisterSerializer, LoginSerializer, MeSerializer, DreamSerializer, PublicDreamSerializer, ProfileSerializer
+from .serializers import RegisterSerializer, LoginSerializer, MeSerializer, DreamSerializer, PublicDreamSerializer, ProfileSerializer, AnalyticsSerializer
+from django.utils.timezone import   now
+from django.db.models import Count
+from django.db.models.functions import TruncDate
+from datetime import timedelta
+from collections import Counter
+
 
 from django.shortcuts import get_object_or_404
 
@@ -226,109 +232,70 @@ class ProfileView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# def analytics(req):
 
-#     # Authenticate user using the auth table
-#     token = req.headers.get("Authorization") 
+class AnalyticsView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
-#     # If no token provided user is not authenticated and status code 401
-#     if not token:
-#         return JsonResponse({"error": "Missing Authorization token"}, status=401)
-    
-#     try:
-#         auth = AuthTable.objects.get(key=token) # this AuthTable links the token to Django user, if invalid -> 401
-#         user = auth.user
-#     except AuthTable.DoesNotExist:
-#         return JsonResponse({"error": "Invalid token"}, status = 401)
-    
-#     # All dreams by this particular user
+    def get(self, request):
+        user = request.user
+        dreams = Dream.objects.filter(user=user)
 
-#     dreams = Dream.objects.filter(user=user)
+        # Total dreams count
+        total_dreams = dreams.count()
 
-#     # counting total number of dreams 
+        # This month count
+        now_dt = now()
+        this_month_count = dreams.filter(
+            created_at__year=now_dt.year,
+            created_at__month=now_dt.month
+        ).count()
 
-#     total_dreams = dreams.count()
+        # Most common mood
+        mood_counts = dreams.values('mood').annotate(count=Count('mood')).order_by('-count')
+        most_common_mood = mood_counts[0]['mood'] if mood_counts else None
 
-#     # the dreams that were created and iput by the user this month
+        # Top tags
+        all_tags = []
+        for d in dreams:
+            if isinstance(d.tags, list):
+                all_tags.extend(d.tags)
+        tag_counter = Counter(all_tags)
+        top_tags = [{'tag': tag, 'count': count} for tag, count in tag_counter.most_common()]
 
-#     now_dt = now()
-#     this_month_count = dreams.filter(
-#         created_at__year = now_dt.year,
-#         created_at__month = now_dt.month
-#     ).count()
+        # Mood distribution
+        mood_dist = [{'mood': m['mood'], 'count': m['count']} for m in mood_counts]
 
-#     # most Common mood by the user after watching the dream
-#     # Groups all dreams by mood and counts dreams per mood
-#     mood_counts = dreams.values("mood").annotate(count=Count("mood")).order_by("-count")
-#     most_common_mood = mood_counts[0]["mood"] if mood_counts else None
+        # recent activity
+        start_date = now_dt - timedelta(days=13)
+        date_counts = (dreams.filter(created_at__date__gte=start_date.date())
+                       .annotate(day=TruncDate('created_at'))
+                       .values('day')
+                       .annotate(count=Count('id'))
+                       .order_by('day'))
+        daily_map = {entry['day']: entry['count'] for entry in date_counts}
 
-#     # Tags - Tags is a JSON list -> so flatten it manually
+        recent_activity = []
+        for i in range(14):
+            day = (start_date + timedelta(days=i)).date()
+            recent_activity.append({
+                'date': day,
+                'count': daily_map.get(day, 0)
+            })
 
-#     from collections import Counter
+        # Prepare response data
+        data = {
+            'totalDreams': total_dreams,
+            'thisMonth': this_month_count,
+            'mostCommonMood': most_common_mood,
+            'topTags': top_tags,
+            'moodDistribution': mood_dist,
+            'recentActivity': recent_activity
+        }
 
-#     all_tags = [] # create an empty list to store the tags
-
-#     for d in dreams:
-#         if isinstance(d.tags, list):
-#             all_tags.extend(d.tags)
-
-#     # count the frequency of each tag 
-
-#     tag_counter = Counter(all_tags) # freq of the tags
-#     top_tags = [{
-#         "tag": tag, 
-#         "count": count
-#         } for tag, count in tag_counter.most_common()]
-    
-#     # Mood distribution of user as per the mood counts earlier
-
-#     mood_dist = [
-#         {"mood": m["mood"],
-#          "count": m["count"]
-#         } for m in mood_counts
-#     ]
-
-
-#     # Recent Activity of the user (Last 14 days)
-
-#     # computer the start date
-
-#     start_date = now_dt - timedelta(days=13)
-
-#     # Querying dreams group by day
-
-#     date_counts = (
-#         dreams.filter(created_at__date__gte=start_date.date())
-#         .annotate(day=TruncDate("created_at"))
-#         .values("day")
-#         .annotate(count=Count("id"))
-#         .order_by("day")
-#     )
-
-#     # Convert to list of date + count for each day in last 14 days
-#     daily_map = {entry["day"]: entry["count"] for entry in date_counts} 
-
-#     # Build a 14 days list, include the empty days
-#     recent_activity = []
-#     for i in range(14):
-#         day = (start_date + timedelta(days=i)).date()
-#         recent_activity.append({
-#             "date": str(day),
-#             "count": daily_map.get(day, 0)
-#         })
-
-#     # now return the JSON response
-
-#     return JsonResponse({
-#         "totalDreams": total_dreams,
-#         "thisMonth": this_month_count,
-#         "mostCommonMood": most_common_mood,
-#         "topTags": top_tags,
-#         "moodDistribution": mood_dist,
-#         "recentActivity": recent_activity
-#     }, status=200)
-
+        serializer = AnalyticsSerializer(data)
+        return Response(serializer.data, status=200)
 
     
 
-# c5583923c9447f3a912045569ac686ab7db1572f
+
