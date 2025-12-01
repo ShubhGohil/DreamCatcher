@@ -115,3 +115,29 @@ class ProfileSerializer(serializers.ModelSerializer):
         if value and len(value) > 255:
             raise serializers.ValidationError("Full name cannot exceed 255 characters")
         return value
+    
+
+# Tag serializer
+class TagSerializer(serializers.Serializer):
+    tag = serializers.CharField(max_length=100)
+    count = serializers.IntegerField()
+
+#mood serializer
+class MoodSerializer(serializers.Serializer):
+    mood = serializers.CharField(max_length=100)
+    count = serializers.IntegerField()
+
+# activity serializer
+class ActivitySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    count = serializers.IntegerField()
+
+
+# analytics serializer
+class AnalyticsSerializer(serializers.Serializer):
+    totalDreams = serializers.IntegerField()
+    thisMonth = serializers.IntegerField()
+    mostCommonMood = serializers.CharField(allow_null=True, allow_blank=True, max_length=100)
+    topTags = TagSerializer(many=True)
+    moodDistribution = MoodSerializer(many=True)
+    recentActivity = ActivitySerializer(many=True)
