@@ -126,6 +126,16 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True  # Use TLS (Transport Layer Security)
+EMAIL_HOST_USER = 'rosrcase0429@gmail.com'  # Your actual Gmail address
+EMAIL_HOST_PASSWORD = 'nyys fwwe mayw sslu ' # The 16-char App Password (remove spaces if preferred, though usually works with them)
+DEFAULT_FROM_EMAIL = 'DreamCatcher rosrcase0429@gmail.com'
+
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 

@@ -233,7 +233,7 @@ export default function Analytics() {
         ) : (
           <div className="flex items-end space-x-2 h-48">
             {analytics.recentActivity.map((item) => {
-              const maxCount = Math.max(...analytics.recentActivity.map((a) => a.count));
+              const maxCount = Math.max(...analytics.recentActivity.map((a) => a.count))-1;
               const height = (item.count / maxCount) * 100;
               return (
                 <div key={item.date} className="flex-1 flex flex-col items-center">

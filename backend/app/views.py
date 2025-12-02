@@ -1,3 +1,5 @@
+from django.contrib.auth import get_user_model
+
 from .models import Profile, Dream, DreamReaction
 
 from rest_framework.views import APIView
@@ -13,6 +15,11 @@ from django.db.models.functions import TruncDate
 from datetime import timedelta
 from collections import Counter
 
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+from django.conf import settings
 
 from django.shortcuts import get_object_or_404
 
@@ -296,6 +303,72 @@ class AnalyticsView(APIView):
         serializer = AnalyticsSerializer(data)
         return Response(serializer.data, status=200)
 
-    
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [permissions.AllowAny]  # Allow unauthenticated users to request reset
+
+    def post(self, request):
+        email = request.data.get('email')
+
+        # We always return success to prevent email enumeration (security best practice)
+        response_data = {'message': 'If an account exists, an email was sent.'}
+
+        if not email:
+            return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        User = get_user_model()
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        # 1. Generate a token and a UID (User ID encoded)
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        # 2. Construct the link to your REACT FRONTEND
+        # You will need to create a route in React: /reset-password/:uid/:token
+        reset_link = f"http://localhost:5173/reset-password/{uid}/{token}"
+
+        # 3. Send the email
+        # Ensure EMAIL_HOST_USER is set in settings.py
+        send_mail(
+            subject='Reset your DreamCatcher Password',
+            message=f'Click the link below to reset your password:\n\n{reset_link}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
+class PasswordResetConfirmView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        # 1. Extract data from the request
+        uid = request.data.get('uid')
+        token = request.data.get('token')
+        new_password = request.data.get('new_password')
+
+        if not uid or not token or not new_password:
+            return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Decode the UID to get the User ID
+        User = get_user_model()
+        try:
+            user_id = force_str(urlsafe_base64_decode(uid))
+            user = User.objects.get(pk=user_id)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({'error': 'Invalid link'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. Check if the token is valid for this user
+        if not default_token_generator.check_token(user, token):
+            return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 4. Set the new password
+        user.set_password(new_password)
+        user.save()
+
+        return Response({'message': 'Password has been reset successfully'}, status=status.HTTP_200_OK)

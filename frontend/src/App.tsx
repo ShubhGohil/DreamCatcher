@@ -1,6 +1,8 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
+import ResetPasswordConfirm from './components/ResetPasswordConfirm';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -13,15 +15,29 @@ function AppContent() {
     );
   }
 
+  // If user is logged in, show Dashboard; otherwise show LandingPage
   return user ? <Dashboard /> : <LandingPage />;
-  // return <Dashboard />;
 }
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <Routes>
+          {/* The password reset route must come BEFORE the catch-all root route */}
+          <Route
+            path="/reset-password/:uid/:token"
+            element={<ResetPasswordConfirm />}
+          />
+
+          {/* Main App Route */}
+          <Route path="/" element={<AppContent />} />
+
+          {/* Catch all - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
 }
 
