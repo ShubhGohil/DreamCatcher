@@ -1,6 +1,6 @@
 from django.contrib.auth.views import PasswordResetView
 from django.urls import path
-from .views import LoginView, RegisterView, LogOutView, MeView, DreamListCreateAPIView, DreamDetailAPIView, PublicDreamsView, ToggleReactionView, ProfileView, AnalyticsView
+from .views import LoginView, RegisterView, LogOutView, MeView, DreamListCreateAPIView, DreamDetailAPIView, PublicDreamsView, ToggleReactionView, ProfileView, AnalyticsView, PasswordResetConfirmView, PasswordResetRequestView
 
 urlpatterns = [
     path("analytics/", AnalyticsView.as_view(), name="analytics"),
@@ -13,5 +13,6 @@ urlpatterns = [
     path("dreams/<str:pk>/", DreamDetailAPIView.as_view(), name="dream-detail"),
     path("dreams/<uuid:id>/react/", ToggleReactionView.as_view()),
     path("auth/profile/", ProfileView.as_view()),
-    path("auth/password-reset/", PasswordResetView.as_view()),
+    path("auth/password-reset/", PasswordResetRequestView.as_view()),
+    path("auth/password-reset/confirm/", PasswordResetConfirmView.as_view())
 ]

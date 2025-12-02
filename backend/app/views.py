@@ -283,7 +283,7 @@ class AnalyticsView(APIView):
         daily_map = {entry['day']: entry['count'] for entry in date_counts}
 
         recent_activity = []
-        for i in range(14):
+        for i in range(12):
             day = (start_date + timedelta(days=i)).date()
             recent_activity.append({
                 'date': day,
@@ -317,6 +317,7 @@ class PasswordResetRequestView(APIView):
             return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         User = get_user_model()
+        print(User)
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
@@ -357,6 +358,7 @@ class PasswordResetConfirmView(APIView):
 
         # 2. Decode the UID to get the User ID
         User = get_user_model()
+        print(User)
         try:
             user_id = force_str(urlsafe_base64_decode(uid))
             user = User.objects.get(pk=user_id)

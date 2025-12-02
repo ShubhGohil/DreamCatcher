@@ -226,7 +226,7 @@ export default function Analytics() {
       <div className="bg-white rounded-2xl p-6 shadow-lg border border-purple-100">
         <h3 className="text-xl font-bold text-purple-900 mb-4 flex items-center space-x-2">
           <Calendar className="w-5 h-5" />
-          <span>Recent Activity (Last 14 Days)</span>
+          <span>Recent Activity (Last 12 Days)</span>
         </h3>
         {analytics.recentActivity.length === 0 ? (
           <p className="text-purple-400 italic">No recent activity</p>

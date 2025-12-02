@@ -25,13 +25,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // MOCK MODE: START LOGGED OUT
     // In a real app, you would check for a token here
+    setUser(user);
     setLoading(false);
+    checkAuth()
   }, []);
+
+  const checkAuth = async () => {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        try {
+          // Assumes an endpoint that returns the current user's info
+          const userData = await api.get('/auth/me/');
+          setUser(userData);
+        } catch (error) {
+          console.error('Auth check failed', error);
+          localStorage.removeItem('authToken');
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
+    };
+
 
   const signUp = async (email: string, password: string, username: string) => {
     try {
       const response = await api.post('/auth/register/', { email, password, username });
-      if (response.user) {
+      if (response.token) {
+         localStorage.setItem('authToken', response.token)
          setUser(response.user);
       }
       return { error: null };
@@ -43,8 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       const response = await api.post('/auth/login/', { email, password });
-      if (response.user) {
-        setUser(response.user);
+      if (response.token) {
+        localStorage.setItem('authToken', response.token)
+        const userData = response.user || await api.get('/auth/me/')
+        setUser(userData);
       }
       return { error: null };
     } catch (error) {
@@ -62,8 +88,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    setUser(null);
-  };
+        try {
+          // Optional: Call logout endpoint if your backend requires token invalidation
+          await api.post('/auth/logout/', {});
+        } catch (e) {
+          // Ignore logout errors
+        }
+        localStorage.removeItem('authToken');
+        setUser(null);
+    };
+
 
   return (
     <AuthContext.Provider value={{ user, loading, signUp, signIn, resetPassword, signOut }}>
